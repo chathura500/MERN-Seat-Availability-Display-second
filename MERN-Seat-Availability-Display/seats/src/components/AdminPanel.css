@@ -1,0 +1,52 @@
+/* AdminPanel.css */
+.container {
+    max-width: 1000px;
+}
+
+h2 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+.form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+.card {
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.btn-success, .btn-warning, .btn-danger {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.btn-success:hover, .btn-warning:hover, .btn-danger:hover {
+    opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+    .col-md-4 {
+        margin-bottom: 15px;
+    }
+}
