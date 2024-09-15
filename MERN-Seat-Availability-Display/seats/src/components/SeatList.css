@@ -1,0 +1,105 @@
+/* SeatList.css */
+.theater-container {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.screen {
+    height: 50px;
+    background: linear-gradient(to bottom, #ffffff, #d3d3d3);
+    margin-bottom: 30px;
+    border-radius: 50%/100% 100% 0 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    color: #495057;
+}
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px;
+    justify-content: center;
+}
+
+.seat {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.seat.available {
+    background-color: #28a745;
+}
+
+.seat.booked {
+    background-color: #dc3545;
+}
+
+.seat:hover {
+    transform: scale(1.1);
+}
+
+.seat-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.seat:hover .seat-tooltip {
+    opacity: 1;
+}
+
+.fa-chair {
+    font-size: 2em; /* Adjust size as needed */
+    color: white; /* Ensure visibility on seat background */
+}
+
+.available-icon {
+    color: #ffffff;
+}
+
+.booked-icon {
+    color: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .seat-grid {
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    }
+
+    .seat {
+        width: 50px;
+        height: 50px;
+    }
+
+    .section-title {
+        font-size: 1em;
+    }
+}
