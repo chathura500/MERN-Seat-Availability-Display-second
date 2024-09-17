@@ -7,6 +7,8 @@ import AdminPanel from './components/AdminPanel';
 import NavBar from './components/NavBar';
 import UserProfile from './components/UserProfile'; 
 import SeatDisplay from './components/SeatDisplay';
+import ProtectedRoute from './components/Protectedroute';
+import AdminProtectedRoute from './components/Adminprotectedroute';
 
 const App = () => {
     const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || ''); // Initialize from localStorage
@@ -31,12 +33,22 @@ const App = () => {
             <Routes>
                 <Route path="/" element={<Login setUserRole={setUserRole} />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/home" element={<Home />} />
+                <Route path="/home"element={
+                    <ProtectedRoute>
+                        <Home />
+                    </ProtectedRoute>
+                }> 
+                </Route>
+                <Route path="/admin" element={
+          <AdminProtectedRoute>
+            <AdminPanel />
+          </AdminProtectedRoute>
+          }
+          ></Route>
                 <Route path="/user-profile" element={<UserProfile />} /> {/* Add this route */}
                 <Route path="/seats" element={<SeatDisplay />} />
 
                 {/* Only allow access to AdminPanel if the user is an admin */}
-                {userRole === 'admin' && <Route path="/admin" element={<AdminPanel />} />}
             </Routes>
         </div>
     );
