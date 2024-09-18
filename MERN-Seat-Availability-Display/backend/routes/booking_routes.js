@@ -1,7 +1,11 @@
 const express = require('express');
 const { verifyUser, verifyAdmin } = require('../middleware/authMiddleware'); // Adjust path if necessary
 const Seat = require('../models/seatSchema');
+const User = require('../models/User'); // User model
 const router = express.Router();
+
+
+
 
 // Get seats for a specific date
 router.get('/seats', async (req, res) => {
@@ -83,6 +87,35 @@ router.patch('/seats/unbook/:id', verifyUser, async (req, res) => { // User-only
         await seat.save();
         res.status(200).json(seat);
     } catch (error) {
+        res.status(500).json({ error: 'Failed to unbook seat' });
+    }
+});
+
+router.patch('/seats/unbook/:seatId', verifyAdmin, async (req, res) => {
+    const { seatId } = req.params;
+    const { userId } = req.body; // Make sure this is being sent correctly
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    try {
+        const seat = await Seat.findById(seatId);
+        if (!seat) {
+            return res.status(404).json({ error: 'Seat not found' });
+        }
+
+        if (seat.bookedBy.toString() !== userId) {
+            return res.status(403).json({ error: 'User is not the owner of this seat' });
+        }
+
+        seat.isSeatAvailable = true;
+        seat.bookedBy = null;
+        await seat.save();
+
+        res.status(200).json({ message: 'Seat unbooked successfully', seat });
+    } catch (error) {
+        console.error('Error unbooking seat:', error);
         res.status(500).json({ error: 'Failed to unbook seat' });
     }
 });

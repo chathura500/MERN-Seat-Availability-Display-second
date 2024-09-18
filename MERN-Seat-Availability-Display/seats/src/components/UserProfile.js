@@ -1,44 +1,67 @@
-// src/components/UserProfile.js
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const UserProfile = () => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [bookings, setBookings] = useState([]);
+    const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
 
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
                 const response = await axios.get('http://localhost:4000/api/user/profile', {
-                    withCredentials: true, // Ensure cookies are sent with the request
+                    params: { date },
+                    withCredentials: true
                 });
-                setUser(response.data);
-            } catch (err) {
-                setError(err.response?.data?.error || 'Failed to fetch user profile');
-            } finally {
-                setLoading(false);
+                setUser(response.data.user);
+                setBookings(response.data.bookings);
+            } catch (error) {
+                console.error('Failed to fetch user profile:', error);
             }
         };
 
         fetchUserProfile();
-    }, []);
+    }, [date]); // Refetch when the date changes
 
-    if (loading) return <div>Loading...</div>;
-    if (error) return <div className="alert alert-danger">{error}</div>;
+    const handleDateChange = (event) => {
+        setDate(event.target.value);
+    };
 
     return (
-        <div className="user-profile">
-            <h2>User Profile</h2>
+        <div>
+            <h1>User Profile</h1>
             {user ? (
                 <div>
-                    <p><strong>Name:</strong> {user.name}</p>
-                    <p><strong>Email:</strong> {user.email}</p>
-                    <p><strong>Role:</strong> {user.role}</p>
-                    {/* Add more user-specific details here */}
+                    <h2>{user.name}</h2>
+                    <p>ID: {user._id}</p> {/* Display the user ID */}
+                    <p>Email: {user.email}</p>
+                    <p>Role: {user.role}</p>
+                    
+                    <div>
+                        <label htmlFor="date">Select Date: </label>
+                        <input
+                            type="date"
+                            id="date"
+                            value={date}
+                            onChange={handleDateChange}
+                        />
+                    </div>
+
+                    <h3>Booked Seats for {date}:</h3>
+                    {bookings.length > 0 ? (
+                        <ul>
+                            {bookings.map((booking) => (
+                                <li key={booking._id}>
+                                    Seat Number: {booking.seatNumber} - Status: {booking.isSeatAvailable ? 'Available' : 'Booked'}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>No bookings for this date.</p>
+                    )}
                 </div>
             ) : (
-                <p>No user data available</p>
+                <p>Loading...</p>
             )}
         </div>
     );
