@@ -1,8 +1,22 @@
 // src/components/NavBar.js
 import React from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const NavBar = ({ userRole }) => {
+
+    const navigate = useNavigate();
+
+     // Logout function
+ const handleLogout = () => {
+    axios.post("http://localhost:4000/logout", {}, { withCredentials: true })
+      .then(() => {
+        navigate("/"); // Redirect after successful logout
+      })
+      .catch((err) => console.log(err));
+  };
+
     return (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
             <div className="container-fluid">
@@ -40,7 +54,7 @@ const NavBar = ({ userRole }) => {
 
                         {/* Logout */}
                         <li className="nav-item">
-                            <Link className="nav-link" to="/">Logout</Link>
+                            <Link className="nav-link" onClick={handleLogout}>Logout</Link>
                         </li>
                     </ul>
                 </div>
