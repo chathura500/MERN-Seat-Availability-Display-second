@@ -18,16 +18,13 @@ const AdminPanel = () => {
     const [seatLetters, setSeatLetters] = useState(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']); // Example letters
     const [seatNumbers, setSeatNumbers] = useState(Array.from({ length: 20 }, (_, i) => i + 1)); // Example numbers
     const [bulkSeats, setBulkSeats] = useState(''); // For inputting seats in bulk
+
+    // Sort seats by seatNumber in alphabetical and numerical order
     const sortedSeats = seats.sort((a, b) => {
-        // Extract seat letters and numbers
         const [aLetter, aNumber] = a.seatNumber.split('-');
         const [bLetter, bNumber] = b.seatNumber.split('-');
-    
-        // Compare letters alphabetically
         return aLetter.localeCompare(bLetter) || aNumber - bNumber;
     });
-    
-
 
     useEffect(() => {
         // Fetch users and their seat bookings
@@ -58,7 +55,7 @@ const AdminPanel = () => {
             await axios.patch(`http://localhost:4000/api/booking/seats/unbook/${seatId}`, {}, {
                 withCredentials: true, // Include cookies with request
             });
-            // Optionally, refetch the users or update the state to reflect changes
+            // Update the users' state to reflect the unbooked seat
             setUsers(users.map(user => ({
                 ...user,
                 bookings: user.bookings.filter(booking => booking._id !== seatId)
@@ -67,9 +64,6 @@ const AdminPanel = () => {
             setError('Failed to unbook seat');
         }
     };
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
 
     const handleCreateSeat = async () => {
         // Ensure both seatLetter and seatNumber are selected
@@ -94,7 +88,7 @@ const AdminPanel = () => {
                 withCredentials: true, // Include cookies with request
             });
 
-            // Optionally, refetch the seats or update the state to reflect changes
+            // Clear the seat selection fields
             setSeatLetter('');
             setSeatNumber('');
 
@@ -109,80 +103,135 @@ const AdminPanel = () => {
         }
     };
 
+    const handleDeleteSeat = async (seatId) => {
+        try {
+            await axios.delete(`http://localhost:4000/api/booking/seats/${seatId}`, {
+                withCredentials: true, // Include cookies with request
+            });
+            // Remove the deleted seat from the seats array
+            setSeats(seats.filter(seat => seat._id !== seatId));
+        } catch (err) {
+            setError('Failed to delete seat');
+        }
+    };
+
     const handleBulkCreateSeats = async () => {
         if (!bulkSeats) {
             setError('Please enter seat numbers to create in bulk');
             return;
         }
-    
-        // Split the input into individual seat strings, e.g., "A1,A2,B3" => ["A1", "A2", "B3"]
+
         const seatList = bulkSeats.split(',').map(seat => seat.trim());
-    
-        // Ensure all seat IDs are in the correct format (e.g., "A1" becomes "A-1")
+
         const formattedSeats = seatList.map(seat => {
-            const letter = seat[0].toUpperCase(); // Extract the seat letter (first character)
-            const number = seat.slice(1);         // Extract the seat number (remaining characters)
-    
-            // Check if the seat is valid
+            const letter = seat[0].toUpperCase();
+            const number = seat.slice(1);
+
             if (!seatLetters.includes(letter) || number === '' || isNaN(number)) {
                 setError(`Invalid seat format: ${seat}`);
                 return null;
-            }   
-    
-            return `${letter}-${number}`; // Format the seat correctly as "Letter-Number" (e.g., "A-1")
-        }).filter(Boolean); // Remove any invalid entries
-    
+            }
+
+            return `${letter}-${number}`;
+        }).filter(Boolean);
+
         if (formattedSeats.length === 0) {
             setError('Please enter valid seat formats');
             return;
         }
-    
+
         const existingSeats = formattedSeats.filter(seatId => seats.some(seat => seat.seatNumber === seatId));
-    
+
         if (existingSeats.length > 0) {
             setError(`The following seats already exist: ${existingSeats.join(', ')}`);
             return;
         }
-    
+
         try {
-            // Bulk API requests for each formatted seat
             const seatRequests = formattedSeats.map(seatId => axios.post('http://localhost:4000/api/booking/seats', {
                 seatNumber: seatId,
                 date
             }, {
                 withCredentials: true,
             }));
-    
-            await Promise.all(seatRequests); // Send all requests concurrently
-    
-            // Clear input and error
+
+            await Promise.all(seatRequests);
+
             setBulkSeats('');
             setError(null);
-    
-            // Refetch seat data
+
             const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
                 withCredentials: true,
             });
             setSeats(seatResponse.data);
-    
+
         } catch (err) {
             setError('Failed to create seats in bulk');
         }
     };
-    
-    
-    
 
-    const handleDeleteSeat = async (seatId) => {
-        try {
-            await axios.delete(`http://localhost:4000/api/booking/seats/${seatId}`, {
-                withCredentials: true, // Include cookies with request
-            });
-            // Optionally, refetch the seats or update the state to reflect changes
-            setSeats(seats.filter(seat => seat._id !== seatId));
-        } catch (err) {
-            setError('Failed to delete seat');
+    const handleCreateRowSeats = async (letter) => {
+        const formattedSeats = seatNumbers.map((number) => `${letter}-${number}`);
+
+        const seatsToCreate = formattedSeats.filter(seatId => !seats.some(seat => seat.seatNumber === seatId));
+
+        if (seatsToCreate.length === 0) {
+            setError(`All seats in row ${letter} already exist`);
+            return;
         }
+
+        try {
+            const seatRequests = seatsToCreate.map(seatId => axios.post('http://localhost:4000/api/booking/seats', {
+                seatNumber: seatId,
+                date
+            }, {
+                withCredentials: true,
+            }));
+
+            await Promise.all(seatRequests);
+
+            const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
+                withCredentials: true,
+            });
+            setSeats(seatResponse.data);
+            setError(null);
+
+        } catch (err) {
+            setError(`Failed to create some seats for row ${letter}`);
+        }
+    };
+
+    // Seat dropdown component for each letter row
+    const SeatDropdown = ({ letter, seats, handleDeleteSeat }) => {
+        const [isOpen, setIsOpen] = useState(false);
+
+        return (
+            <div className="seat-dropdown">
+                <button onClick={() => setIsOpen(!isOpen)}>
+                    {isOpen ? `Hide Seats for ${letter}` : `Show Seats for ${letter}`}
+                </button>
+                {isOpen && (
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Seat Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {seats.map(seat => (
+                                <tr key={seat._id}>
+                                    <td>{seat.seatNumber}</td>
+                                    <td>
+                                        <button onClick={() => handleDeleteSeat(seat._id)}>Delete Seat</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        );
     };
 
     if (loading) return <p>Loading...</p>;
@@ -201,71 +250,69 @@ const AdminPanel = () => {
             />
 
             <div>
+                <h2>Create Row Seats</h2>
+                {seatLetters.map((letter) => (
+                    <button key={letter} onClick={() => handleCreateRowSeats(letter)}>
+                        Create Seats {letter}-1 to {letter}-20
+                    </button>
+                ))}
+            </div>
+
+            <div>
+                <h2>Seats List</h2>
+                {seatLetters.map(letter => {
+                    const seatsForRow = sortedSeats.filter(seat => seat.seatNumber.startsWith(letter));
+                    return (
+                        <SeatDropdown 
+                            key={letter} 
+                            letter={letter} 
+                            seats={seatsForRow} 
+                            handleDeleteSeat={handleDeleteSeat} 
+                        />
+                    );
+                })}
+            </div>
+
+            {/* <div>
                 <h2>Create Seat</h2>
-                <label htmlFor="seatLetter">Seat Letter:</label>
-                <select
-                    id="seatLetter"
-                    value={seatLetter}
-                    onChange={(e) => setSeatLetter(e.target.value)}
-                >
-                    <option value="">Select Letter</option>
-                    {seatLetters.map(letter => (
+                <label>Seat Letter:</label>
+                <select value={seatLetter} onChange={(e) => setSeatLetter(e.target.value)}>
+                    <option value="">Select a letter</option>
+                    {seatLetters.map((letter) => (
                         <option key={letter} value={letter}>{letter}</option>
                     ))}
                 </select>
-                <label htmlFor="seatNumber">Seat Number:</label>
-                <select
-                    id="seatNumber"
-                    value={seatNumber}
-                    onChange={(e) => setSeatNumber(e.target.value)}
-                >
-                    <option value="">Select Number</option>
-                    {seatNumbers.map(number => (
+
+                <label>Seat Number:</label>
+                <select value={seatNumber} onChange={(e) => setSeatNumber(e.target.value)}>
+                    <option value="">Select a number</option>
+                    {seatNumbers.map((number) => (
                         <option key={number} value={number}>{number}</option>
                     ))}
                 </select>
+
                 <button onClick={handleCreateSeat}>Create Seat</button>
-            </div>
-            <div>
+            </div> */}
+
+            {/* <div>
                 <h2>Bulk Create Seats</h2>
-                <label htmlFor="bulkSeats">Enter Seats (e.g., A1,A2,B3,B5):</label>
+                <label htmlFor="bulkSeats">Enter seats (e.g., A1, B2, C3):</label>
                 <input
                     type="text"
                     id="bulkSeats"
                     value={bulkSeats}
                     onChange={(e) => setBulkSeats(e.target.value)}
                 />
-                <button onClick={handleBulkCreateSeats}>Create Bulk Seats</button>
-            </div>
-            <div>
-                <h2>Seats List</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Seat Number</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedSeats.map(seat => (
-                            <tr key={seat._id}>
-                                <td>{seat.seatNumber}</td>
-                                <td>
-                                    <button onClick={() => handleDeleteSeat(seat._id)}>Delete Seat</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                <button onClick={handleBulkCreateSeats}>Create Seats in Bulk</button>
+            </div> */}
+
             <div>
                 <h2>Users and Bookings</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>User Name</th>
                             <th>Email</th>
-                            <th>Role</th>
                             <th>Booked Seats</th>
                             <th>Actions</th>
                         </tr>
@@ -275,27 +322,12 @@ const AdminPanel = () => {
                             <tr key={user._id}>
                                 <td>{user.name}</td>
                                 <td>{user.email}</td>
-                                <td>{user.role}</td>
                                 <td>
-                                    {user.bookings.length > 0 ? (
-                                        user.bookings.map((booking, index) => (
-                                            <div key={index}>
-                                                Seat Number: {booking.seatNumber}, Date: {new Date(booking.date).toLocaleDateString()}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <span>No bookings</span>
-                                    )}
-                                </td>
-                                <td>
-                                    {user.bookings.length > 0 && user.bookings.map(booking => (
-                                        <div key={booking._id}>
-                                            <button
-                                                onClick={() => handleUnbook(booking._id)}
-                                            >
-                                                Unbook Seat {booking.seatNumber}
-                                            </button>
-                                        </div>
+                                    {user.bookings.map(booking => (
+                                        <span key={booking._id}>
+                                            {booking.seatNumber}
+                                            <button onClick={() => handleUnbook(booking._id)}>Unbook</button>
+                                        </span>
                                     ))}
                                 </td>
                             </tr>
