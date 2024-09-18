@@ -7,7 +7,10 @@ const AdminPanel = () => {
     const [seats, setSeats] = useState([]); // State for seats
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [date, setDate] = useState('2024-09-18'); // Set the default date or provide a way to select it
+    const [date, setDate] = useState(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]; // Returns the date in 'YYYY-MM-DD' format
+    });// Set the default date or provide a way to select it
 
     // State for creating a new seat
     const [seatLetter, setSeatLetter] = useState('');
@@ -193,8 +196,10 @@ const AdminPanel = () => {
                 type="date"
                 id="date"
                 value={date}
+                min={new Date().toISOString().split('T')[0]} // Disable past dates
                 onChange={(e) => setDate(e.target.value)}
             />
+
             <div>
                 <h2>Create Seat</h2>
                 <label htmlFor="seatLetter">Seat Letter:</label>
