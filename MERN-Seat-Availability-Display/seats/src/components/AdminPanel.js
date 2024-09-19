@@ -19,7 +19,6 @@ const AdminPanel = () => {
     const [seatNumbers, setSeatNumbers] = useState(Array.from({ length: 20 }, (_, i) => i + 1)); // Example numbers
     const [bulkSeats, setBulkSeats] = useState(''); // For inputting seats in bulk
     const [creatingSeats, setCreatingSeats] = useState(false); // State to track seat creation progress
-    const [deleteConfirmation, setDeleteConfirmation] = useState(''); // State for delete confirmation input
 
     // Sort seats by seatNumber in alphabetical and numerical order
     const sortedSeats = seats.sort((a, b) => {
@@ -250,7 +249,7 @@ const AdminPanel = () => {
 
         return (
             <div className="seat-dropdown">
-                <button onClick={() => setIsOpen(!isOpen)}>
+                <button className='buton dropdownbuton'onClick={() => setIsOpen(!isOpen)}>
                     {isOpen ? `Hide Seats for ${letter}` : `Show Seats for ${letter}`}
                 </button>
                 {isOpen && (
@@ -266,7 +265,7 @@ const AdminPanel = () => {
                                 <tr key={seat._id}>
                                     <td>{seat.seatNumber}</td>
                                     <td>
-                                        <button onClick={() => handleDeleteSeat(seat._id)}>Delete Seat</button>
+                                        <button className='buton butondelseat'onClick={() => handleDeleteSeat(seat._id)}>Delete Seat</button>
                                     </td>
                                 </tr>
                             ))}
@@ -284,6 +283,7 @@ const AdminPanel = () => {
         <div className="admin-panel">
             <h1>Admin Panel</h1>
             <label htmlFor="date">Select Date:</label>
+            
             <input
                 type="date"
                 id="date"
@@ -291,11 +291,11 @@ const AdminPanel = () => {
                 min={new Date().toISOString().split('T')[0]} // Disable past dates
                 onChange={(e) => setDate(e.target.value)}
             />
-
             <div>
-                <h2>Create Row Seats</h2>
+            <h2>Create Row Seats</h2>
+            <div className='butonarrange'>
                 {seatLetters.map((letter) => (
-                    <button key={letter}
+                    <button className='buton' key={letter}
                      onClick={() => handleCreateRowSeats(letter)}
                      disabled={creatingSeats} // Disable button while seats are being created
                      >
@@ -303,18 +303,22 @@ const AdminPanel = () => {
                     </button>
                 ))}
             </div>
+            </div>
             
             <div>
                 <h2>Delete Row Seats</h2>
+            <div className='butonarrange'>   
                 {seatLetters.map((letter) => (
-                    <button key={letter} onClick={() => handleDeleteRowSeats(letter)}>
-                        Delete All Seats in Row {letter} (confirmation required)
+                    <button className='buton butondelete' key={letter} onClick={() => handleDeleteRowSeats(letter)}>
+                        Delete All Seats in Row {letter} 
                     </button>
                 ))}
+            </div>
             </div>
 
             <div>
                 <h2>Seats List</h2>
+                <div className="seat-dropdowns-container">
                 {seatLetters.map(letter => {
                     const seatsForRow = sortedSeats.filter(seat => seat.seatNumber.startsWith(letter));
                     return (
@@ -326,6 +330,7 @@ const AdminPanel = () => {
                         />
                     );
                 })}
+                </div>
             </div>
 
 
@@ -363,35 +368,46 @@ const AdminPanel = () => {
                 <button onClick={handleBulkCreateSeats}>Create Seats in Bulk</button>
             </div> */}
 
-            <div>
-                <h2>Users and Bookings</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User Name</th>
-                            <th>Email</th>
-                            <th>Booked Seats</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map(user => (
-                            <tr key={user._id}>
-                                <td>{user.name}</td>
-                                <td>{user.email}</td>
-                                <td>
-                                    {user.bookings.map(booking => (
-                                        <span key={booking._id}>
-                                            {booking.seatNumber}
-                                            <button onClick={() => handleUnbook(booking._id)}>Unbook</button>
-                                        </span>
-                                    ))}
-                                </td>
-                            </tr>
+<div>
+    <h2>Users and Bookings</h2>
+    <table className="users-bookings-table">
+        <thead>
+            <tr>
+                <th>User Name</th>
+                <th>Email</th>
+                <th>Booked Seats</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {users.map(user => (
+                <tr key={user._id}>
+                    <td data-label="User Name">{user.name}</td>
+                    <td data-label="Email">{user.email}</td>
+                    <td data-label="Booked Seats">
+                        {user.bookings.map(booking => (
+                            <span key={booking._id}>
+                                {booking.seatNumber}
+                                {user.bookings.length > 1 && ', '}
+                            </span>
                         ))}
-                    </tbody>
-                </table>
-            </div>
+                    </td>
+                    <td data-label="Actions">
+                        {user.bookings.map(booking => (
+                            <button 
+                                key={booking._id} 
+                                onClick={() => handleUnbook(booking._id)}
+                                className="buton-unbook"
+                            >
+                                Unbook {booking.seatNumber}
+                            </button>
+                        ))}
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+</div>
         </div>
     );
 };
