@@ -76,6 +76,15 @@ const SeatDisplay = () => {
     // Sort sections alphabetically
     const sortedSections = Object.keys(seatsBySection).sort();
 
+    // Sort seats within each section by numeric order
+    sortedSections.forEach(section => {
+        seatsBySection[section].sort((a, b) => {
+            const numA = parseInt(a.seatNumber.slice(1)); // Get the numeric part
+            const numB = parseInt(b.seatNumber.slice(1)); // Get the numeric part
+            return numB - numA;
+        });
+    });
+
     return (
         <div className="container mt-4">
             <h2 className="mb-4">Seat Booking</h2>
@@ -90,6 +99,7 @@ const SeatDisplay = () => {
                             id="date"
                             className="form-control"
                             value={date}
+                            min={new Date().toISOString().split('T')[0]} // Disable past dates
                             onChange={(e) => setDate(e.target.value)}
                         />
                     </div>

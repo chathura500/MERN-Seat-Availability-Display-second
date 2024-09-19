@@ -18,6 +18,8 @@ const AdminPanel = () => {
     const [seatLetters, setSeatLetters] = useState(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']); // Example letters
     const [seatNumbers, setSeatNumbers] = useState(Array.from({ length: 20 }, (_, i) => i + 1)); // Example numbers
     const [bulkSeats, setBulkSeats] = useState(''); // For inputting seats in bulk
+    const [creatingSeats, setCreatingSeats] = useState(false); // State to track seat creation progress
+    const [deleteConfirmation, setDeleteConfirmation] = useState(''); // State for delete confirmation input
 
     // Sort seats by seatNumber in alphabetical and numerical order
     const sortedSeats = seats.sort((a, b) => {
@@ -171,12 +173,18 @@ const AdminPanel = () => {
     };
 
     const handleCreateRowSeats = async (letter) => {
+
+        if (creatingSeats) return; // Prevent multiple simultaneous seat creation actions
+        setCreatingSeats(true); // Lock the process to prevent duplicate clicks
+
+
         const formattedSeats = seatNumbers.map((number) => `${letter}-${number}`);
 
         const seatsToCreate = formattedSeats.filter(seatId => !seats.some(seat => seat.seatNumber === seatId));
 
         if (seatsToCreate.length === 0) {
             setError(`All seats in row ${letter} already exist`);
+            setCreatingSeats(false);
             return;
         }
 
@@ -198,6 +206,41 @@ const AdminPanel = () => {
 
         } catch (err) {
             setError(`Failed to create some seats for row ${letter}`);
+        }finally {
+            setCreatingSeats(false); // Unlock the button once the operation is done
+        }
+    };
+
+    const handleDeleteRowSeats = async (letter) => {
+
+        const confirmation = window.prompt(`Type "DELETE" to confirm deletion of row ${letter}`);
+    
+        if (confirmation !== 'DELETE') {
+            setError('Row deletion canceled');
+            return;
+        }
+
+        const seatsToDelete = seats.filter(seat => seat.seatNumber.startsWith(letter));
+
+        if (seatsToDelete.length === 0) {
+            setError(`No seats found for row ${letter}`);
+            return;
+        }
+
+        try {
+            // Send a delete request for each seat in the row
+            const deleteRequests = seatsToDelete.map(seat => 
+                axios.delete(`http://localhost:4000/api/booking/seats/${seat._id}`, {
+                    withCredentials: true,
+                })
+            );
+            await Promise.all(deleteRequests);
+
+            // Update the seats state by removing deleted seats
+            setSeats(seats.filter(seat => !seat.seatNumber.startsWith(letter)));
+            setError(null);
+        } catch (err) {
+            setError(`Failed to delete some seats in row ${letter}`);
         }
     };
 
@@ -252,8 +295,20 @@ const AdminPanel = () => {
             <div>
                 <h2>Create Row Seats</h2>
                 {seatLetters.map((letter) => (
-                    <button key={letter} onClick={() => handleCreateRowSeats(letter)}>
-                        Create Seats {letter}-1 to {letter}-20
+                    <button key={letter}
+                     onClick={() => handleCreateRowSeats(letter)}
+                     disabled={creatingSeats} // Disable button while seats are being created
+                     >
+                      {creatingSeats ? 'Creating...' : `Create Seats ${letter}-1 to ${letter}-20`}
+                    </button>
+                ))}
+            </div>
+            
+            <div>
+                <h2>Delete Row Seats</h2>
+                {seatLetters.map((letter) => (
+                    <button key={letter} onClick={() => handleDeleteRowSeats(letter)}>
+                        Delete All Seats in Row {letter} (confirmation required)
                     </button>
                 ))}
             </div>
@@ -272,6 +327,8 @@ const AdminPanel = () => {
                     );
                 })}
             </div>
+
+
 
             {/* <div>
                 <h2>Create Seat</h2>
