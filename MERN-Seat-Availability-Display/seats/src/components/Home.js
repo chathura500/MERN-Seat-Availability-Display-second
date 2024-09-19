@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './HomePage.css'; // Use your existing CSS file for styling
 
+
 const Home = () => {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // Default to today's date
     const [seats, setSeats] = useState([]);
@@ -51,6 +52,7 @@ const Home = () => {
                         className="form-control"
                         value={date}
                         onChange={handleDateChange}
+                        min={new Date().toISOString().split('T')[0]}
                         style={{ maxWidth: '300px', margin: '0 auto' }}
                     />
                 </div>
