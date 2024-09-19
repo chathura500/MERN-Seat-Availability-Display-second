@@ -87,7 +87,7 @@ const SeatDisplay = () => {
 
     return (
         <div className="container mt-4">
-            <h2 className="mb-4">Seat Booking</h2>
+            <h1 className="mb-4">Seat Booking</h1>
 
             {/* Select Date */}
             <div className="row mb-4">
