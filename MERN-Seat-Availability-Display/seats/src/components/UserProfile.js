@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './UserProfile.css'; // Import the CSS file
 
 const UserProfile = () => {
     const [user, setUser] = useState(null);
@@ -28,41 +29,43 @@ const UserProfile = () => {
     };
 
     return (
-        <div>
-            <h1>User Profile</h1>
-            {user ? (
-                <div>
-                    <h2>{user.name}</h2>
-                    <p>ID: {user._id}</p> {/* Display the user ID */}
-                    <p>Email: {user.email}</p>
-                    <p>Role: {user.role}</p>
-                    
+        <div className="profile-container">
+            <div className="profile-card">
+                <h1>User Profile</h1>
+                {user ? (
                     <div>
-                        <label htmlFor="date">Select Date: </label>
-                        <input
-                            type="date"
-                            id="date"
-                            value={date}
-                            onChange={handleDateChange}
-                        />
-                    </div>
+                        <h2>{user.name}</h2>
+                        <p>ID: {user._id}</p> {/* Display the user ID */}
+                        <p>Email: {user.email}</p>
+                        <p>Role: {user.role}</p>
+                        
+                        <div>
+                            <label htmlFor="date">Select Date: </label>
+                            <input
+                                type="date"
+                                id="date"
+                                value={date}
+                                onChange={handleDateChange}
+                            />
+                        </div>
 
-                    <h3>Booked Seats for {date}:</h3>
-                    {bookings.length > 0 ? (
-                        <ul>
-                            {bookings.map((booking) => (
-                                <li key={booking._id}>
-                                    Seat Number: {booking.seatNumber} - Status: {booking.isSeatAvailable ? 'Available' : 'Booked'}
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>No bookings for this date.</p>
-                    )}
-                </div>
-            ) : (
-                <p>Loading...</p>
-            )}
+                        <h3>Booked Seats for {date}:</h3>
+                        {bookings.length > 0 ? (
+                            <ul>
+                                {bookings.map((booking) => (
+                                    <li key={booking._id}>
+                                        Seat Number: {booking.seatNumber} - Status: {booking.isSeatAvailable ? 'Available' : 'Booked'}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>No bookings for this date.</p>
+                        )}
+                    </div>
+                ) : (
+                    <p>Loading...</p>
+                )}
+            </div>
         </div>
     );
 };
