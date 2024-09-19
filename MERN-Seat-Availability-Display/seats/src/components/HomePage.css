@@ -1,7 +1,8 @@
 /* HomePage.css */
 
+/* Base styles */
 .home-page {
-    background-image: url('https://images.pexels.com/photos/257385/pexels-photo-257385.jpeg?auto=compress&cs=tinysrgb&w=800'); /* Path to your uploaded image */
+    background-image: url('https://images.pexels.com/photos/257385/pexels-photo-257385.jpeg?auto=compress&cs=tinysrgb&w=800');
     background-size: cover;
     background-position: center;
     position: relative;
@@ -9,6 +10,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow: hidden; /* Hide overflow */
 }
 
 .home-page::before {
@@ -18,17 +20,19 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    background-color: rgba(0, 0, 0, 0.6);
     opacity: 0.5;
     z-index: 1;
 }
 
 .container {
     position: relative;
-    z-index: 2; /* Keeps content on top of the background */
+    z-index: 2;
     color: white;
     max-width: 900px;
     margin: 0 auto;
+    padding: 0.5rem; /* Add padding for smaller screens */
+    box-sizing: border-box; /* Ensure padding is included in the width */
 }
 
 .form-group {
@@ -37,22 +41,61 @@
 
 .row {
     display: flex;
-    justify-content: center; /* Center row content horizontally */
+    flex-direction: column; /* Stack vertically on small screens */
+    justify-content: center;
     gap: 1rem;
 }
 
 .card {
-    background-color: rgba(255, 255, 255, 0.8); /* Slight transparency */
+    background-color: rgba(255, 255, 255, 0.8);
     color: #000;
     border-radius: 10px;
+    padding: 1rem; /* Add padding to the card */
 }
 
 h1 {
-    font-size: 2.5rem;
+    font-size: 2.0rem;
     margin-bottom: 1.5rem;
 }
 
 input[type="date"] {
     text-align: center;
     font-size: 1.2rem;
+}
+
+/* Responsive Styles */
+@media (min-width: 576px) {
+    .row {
+        flex-direction: row; /* Horizontal layout on larger screens */
+    }
+}
+
+@media (min-width: 768px) {
+    .container {
+        padding: 2rem; /* More padding for medium screens */
+    }
+
+    h1 {
+        font-size: 3rem; /* Larger font size for medium screens */
+    }
+}
+
+@media (min-width: 992px) {
+    .container {
+        max-width: 1200px; /* Wider max-width for large screens */
+    }
+
+    .card {
+        padding: 2rem; /* Increase padding for larger cards */
+    }
+
+    h1 {
+        font-size: 3.5rem; /* Larger font size for larger screens */
+    }
+}
+
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1400px; /* Even wider max-width for extra large screens */
+    }
 }

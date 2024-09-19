@@ -1,15 +1,15 @@
 // src/components/NavBar.js
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import './NavBar.css'; // Custom CSS file
 
 const NavBar = ({ userRole }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
-
-     // Logout function
- const handleLogout = () => {
+  const handleLogout = () => {
     axios.post("http://localhost:4000/logout", {}, { withCredentials: true })
       .then(() => {
         navigate("/"); // Redirect after successful logout
@@ -17,50 +17,86 @@ const NavBar = ({ userRole }) => {
       .catch((err) => console.log(err));
   };
 
-    return (
-        <nav className="navbar navbar-expand-lg navbar-light bg-light">
-            <div className="container-fluid">
-                <Link className="navbar-brand" to="/home">Seat Booking</Link>
-                <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span className="navbar-toggler-icon"></span>
-                </button>
-                <div className="collapse navbar-collapse" id="navbarNav">
-                    <ul className="navbar-nav">
-                        {/* Common Links */}
-                        <li className="nav-item">
-                            <Link className="nav-link" to="/home">Home</Link>
-                        </li>
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
 
-                        {/* Admin Links */}
-                        {userRole === 'admin' && (
-                            <li className="nav-item">
-                                <Link className="nav-link" to="/admin">Admin Panel</Link>
-                            </li>
-                        )}
+  return (
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link className="navbar-brand" to="/home">Seat Booking</Link>
 
-                         {/* User-specific Links */}
-                         {userRole === 'user' && (
-                            <>
-                                 <li className="nav-item">
-                                    <Link className="nav-link" to="/seats">Book Seats</Link> {/* Add this link */}
-                                </li>
-                                
-                                <li className="nav-item">
-                                    <Link className="nav-link" to="/user-profile">Profile</Link>
-                                </li>
-                               
-                            </>
-                        )}
+        <div className={`navbar-links ${isOpen ? 'open' : ''}`}>
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <Link className="nav-link" to="/home">Home</Link>
+            </li>
 
-                        {/* Logout */}
-                        <li className="nav-item">
-                            <Link className="nav-link" onClick={handleLogout}>Logout</Link>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    );
+            {userRole === 'admin' && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/admin">Admin Panel</Link>
+              </li>
+            )}
+
+            {userRole === 'user' && (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/seats">Book Seats</Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/user-profile">Profile</Link>
+                </li>
+              </>
+            )}
+
+            <li className="nav-item">
+              <button className="nav-link logout-btn" onClick={handleLogout}>Logout</button>
+            </li>
+          </ul>
+        </div>
+
+        <button className="navbar-toggler" onClick={toggleMenu}>
+          &#9776; {/* Unicode character for hamburger icon */}
+        </button>
+
+        {/* Off-canvas menu for mobile view */}
+        <div className={`offcanvas ${isOpen ? 'show' : ''}`}>
+          <div className="offcanvas-header">
+            <h5 className="offcanvas-title">Menu</h5>
+            <button className="btn-close" onClick={toggleMenu}>
+              &times;
+            </button>
+          </div>
+          <ul className="offcanvas-nav">
+            <li className="nav-item">
+              <Link className="nav-link" to="/home" onClick={toggleMenu}>Home</Link>
+            </li>
+
+            {userRole === 'admin' && (
+              <li className="nav-item">
+                <Link className="nav-link" to="/admin" onClick={toggleMenu}>Admin Panel</Link>
+              </li>
+            )}
+
+            {userRole === 'user' && (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/seats" onClick={toggleMenu}>Book Seats</Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/user-profile" onClick={toggleMenu}>Profile</Link>
+                </li>
+              </>
+            )}
+
+            <li className="nav-item">
+              <button className="nav-link logout-btn" onClick={handleLogout}>Logout</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
 };
 
 export default NavBar;
