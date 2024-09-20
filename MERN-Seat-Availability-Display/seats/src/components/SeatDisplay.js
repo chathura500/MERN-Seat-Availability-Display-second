@@ -87,8 +87,9 @@ const SeatDisplay = () => {
 
     return (
         <div className="container mt-4">
-            <h1 className="mb-4">Seat Booking</h1>
-
+            <div className='smallcont'>
+            <h1 className="mb-4 ">Seat Booking</h1>
+            </div>
             {/* Select Date */}
             <div className="row mb-4">
                 <div className="col-md-6">
@@ -105,6 +106,7 @@ const SeatDisplay = () => {
                     </div>
                 </div>
             </div>
+            
 
             {/* Show error or success messages */}
             {error && <p className="text-danger mt-2">{error}</p>}
