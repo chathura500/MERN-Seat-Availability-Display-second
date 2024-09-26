@@ -1,5 +1,4 @@
-// src/components/NavBar.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -21,12 +20,27 @@ const NavBar = ({ userRole }) => {
     setIsOpen(!isOpen);
   };
 
+  // Close the offcanvas when window is resized to a width larger than 768px
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768 && isOpen) {
+        setIsOpen(false); // Close offcanvas in large screens
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isOpen]);
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
         <Link className="navbar-brand" to="/home">Seat Booking</Link>
 
-        <div className={`navbar-links ${isOpen ? 'open' : ''}`}>
+        {/* Normal navbar links - hidden in mobile view */}
+        <div className={`navbar-links ${isOpen ? 'hide-links' : ''}`}>
           <ul className="navbar-nav">
             <li className="nav-item">
               <Link className="nav-link" to="/home">Home</Link>
@@ -55,6 +69,7 @@ const NavBar = ({ userRole }) => {
           </ul>
         </div>
 
+        {/* Toggler for offcanvas menu */}
         <button className="navbar-toggler" onClick={toggleMenu}>
           &#9776; {/* Unicode character for hamburger icon */}
         </button>
@@ -63,9 +78,6 @@ const NavBar = ({ userRole }) => {
         <div className={`offcanvas ${isOpen ? 'show' : ''}`}>
           <div className="offcanvas-header">
             <h5 className="offcanvas-title">Menu</h5>
-            <button className="btn-close" onClick={toggleMenu}>
-              &times;
-            </button>
           </div>
           <ul className="offcanvas-nav">
             <li className="nav-item">

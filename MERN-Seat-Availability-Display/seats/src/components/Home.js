@@ -63,7 +63,7 @@ const Home = () => {
                 ) : error ? (
                     <div className="alert alert-danger mt-5">Error: {error}</div>
                 ) : (
-                    <div className="row mt-4">
+                    <div className="row ">
                         <div className="col-md-4">
                             <div className="card p-3 mb-3">
                                 <h3>Total Seats</h3>

@@ -1,12 +1,16 @@
 /* HomePage.css */
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 /* Base styles */
+
+
 .home-page {
-    background-image: url('https://benchdesking.com/wp-content/uploads/2023/03/Veta-7-Copy.jpg');
+    background-image: url('K:\MERN-Seat-Availability-Display-second\MERN-Seat-Availability-Display\seats\public\workspace.jpg');
     background-size: cover;
+    font-family: "Inter", sans-serif;
     background-position: center;
     position: relative;
     height: 100vh; /* Full viewport height */
+    margin: 0;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -51,21 +55,32 @@
     color: #000;
     border-radius: 10px;
     padding: 1rem; /* Add padding to the card */
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.9);
 }
 
-h1 {
-    font-size: 2.0rem;
-    margin-bottom: 1.5rem;
+.card h3, p{
+    font-size: 1.5rem;
+}
+
+.container h1 {
+    font-style: italic;
+    font-size: 3rem;
+    margin-top: 5rem;
+    margin-bottom: 1rem;
 /* Adjust thickness as needed */
     display: inline-block;    /* Make the border wrap tightly around the text */
     padding: 10px;            /* Add space between the text and the border */
-    background-color: rgba(0, 0, 0, 0.6); /* Optional: Add background color for readability */
+    background-color: rgba(0, 0, 0, 0.4); /* Optional: Add background color for readability */
     color: white;
 }
 
 input[type="date"] {
     text-align: center;
     font-size: 1.2rem;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 13px;
 }
 
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './SeatList.css'; // Assuming you have styles for seats and sections
+import './SeatList.css'; // Make sure the CSS file contains the updated styles
 
 const SeatDisplay = () => {
     const [seats, setSeats] = useState([]);
@@ -86,12 +86,12 @@ const SeatDisplay = () => {
     });
 
     return (
-        <div className="container mt-4">
+        <div className="seatmaincontainer container mt-4">
             <div className='smallcont'>
-            <h1 className="mb-4 ">Seat Booking</h1>
+                <h1 className="mb-4">Seat Booking</h1>
             </div>
             {/* Select Date */}
-            <div className="row mb-4">
+            <div className="row mb-4 text-center">
                 <div className="col-md-6">
                     <div className="form-group">
                         <label htmlFor="date">Select Date:</label>
@@ -106,7 +106,6 @@ const SeatDisplay = () => {
                     </div>
                 </div>
             </div>
-            
 
             {/* Show error or success messages */}
             {error && <p className="text-danger mt-2">{error}</p>}
@@ -121,29 +120,52 @@ const SeatDisplay = () => {
 
             {/* Seat List */}
             {!loading && seats.length > 0 && (
-                <div>
-                    <p className="text-center mb-4">Available Seats: <span className="badge badge-primary">{availableSeatsCount}</span></p>
+                <div className='seatset'>
+                    <p className="text-center mb-4">Available Seats: <span className="badge">{availableSeatsCount}</span></p>
                     <div className="theater-container">
                         <div className="screen mb-4"></div>
-                        {sortedSections.map(section => (
-                            <div key={section} className="section mb-4">
-                                <h3 className="section-title">Section {section}</h3>
-                                <div className="seat-grid">
-                                    {seatsBySection[section].map(seat => (
-                                        <div
-                                            key={seat._id}
-                                            className={`seat ${seat.isSeatAvailable ? 'available' : 'booked'}`}
-                                            onClick={() => seat.isSeatAvailable ? bookSeat(seat._id) : unbookSeat(seat._id)}
-                                        >
-                                            {seat.seatNumber}
-                                            <div className="seat-tooltip">
-                                                {seat.isSeatAvailable ? 'Available' : 'Booked'}
-                                            </div>
+                        {sortedSections.map(section => {
+                            const leftSeats = seatsBySection[section].slice(0, 10); // First 10 seats (left side)
+                            const rightSeats = seatsBySection[section].slice(10);   // Next 10 seats (right side)
+
+                            return (
+                                <div key={section} className="section mb-4">
+                                    <h3 className="section-title">Section {section}</h3>
+                                    <div className="seat-grid">
+                                        {/* First row (Seats 1-10 on left) */}
+                                        <div className="seat-group">
+                                            {leftSeats.map(seat => (
+                                                <div
+                                                    key={seat._id}
+                                                    className={`seat ${seat.isSeatAvailable ? 'available' : 'booked'}`}
+                                                    onClick={() => seat.isSeatAvailable ? bookSeat(seat._id) : unbookSeat(seat._id)}
+                                                >
+                                                    {seat.seatNumber}
+                                                    <div className="seat-tooltip">
+                                                        {seat.isSeatAvailable ? 'Available' : 'Booked'}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                        {/* Second row (Seats 11-20 on right) */}
+                                        <div className="seat-group">
+                                            {rightSeats.map(seat => (
+                                                <div
+                                                    key={seat._id}
+                                                    className={`seat ${seat.isSeatAvailable ? 'available' : 'booked'}`}
+                                                    onClick={() => seat.isSeatAvailable ? bookSeat(seat._id) : unbookSeat(seat._id)}
+                                                >
+                                                    {seat.seatNumber}
+                                                    <div className="seat-tooltip">
+                                                        {seat.isSeatAvailable ? 'Available' : 'Booked'}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
