@@ -1,6 +1,7 @@
 /* AdminPanel.css */
 
 .admin-panel {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     padding: 20px;
@@ -8,10 +9,12 @@
     background-color: #f9f9f9;
     border-radius: 8px;
     max-width: 90%;
-    margin: 0 auto;
+    margin: auto;
+    margin-top: 60px;
 }
 
 .admin-panel h1 {
+    font-style: italic;
     font-size: 3rem;
     color: #2c3e50;
     text-align: center;
@@ -30,7 +33,7 @@
     text-align: center;
 }
 
-h2 {
+.admin-panel h2 {
     color: #167090;
     font-size: 1.5rem;
     border-bottom: 2px solid #3498db;

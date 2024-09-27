@@ -29,45 +29,46 @@ const UserProfile = () => {
     };
 
     return (
-        <div className="profile-container">
-            <div className="profile-card">
-                <h1>User Profile</h1>
-                {user ? (
+    <div className="profile-container">
+        <div className="profile-card">
+            <h1>User Profile</h1>
+            {user ? (
+                <div>
+                    <h2>{user.name}</h2>
+                    <p>ID: {user._id}</p> {/* Display the user ID */}
+                    <p>Email: {user.email}</p>
+                    <p>Role: {user.role}</p>
+                    
                     <div>
-                        <h2>{user.name}</h2>
-                        <p>ID: {user._id}</p> {/* Display the user ID */}
-                        <p>Email: {user.email}</p>
-                        <p>Role: {user.role}</p>
-                        
-                        <div>
-                            <label htmlFor="date">Select Date: </label>
-                            <input
-                                type="date"
-                                id="date"
-                                value={date}
-                                onChange={handleDateChange}
-                            />
-                        </div>
-
-                        <h3>Booked Seats for {date}:</h3>
-                        {bookings.length > 0 ? (
-                            <ul>
-                                {bookings.map((booking) => (
-                                    <li key={booking._id}>
-                                        Seat Number: {booking.seatNumber} - Status: {booking.isSeatAvailable ? 'Available' : 'Booked'}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p>No bookings for this date.</p>
-                        )}
+                        <label htmlFor="date">Select Date: </label>
+                        <input
+                            type="date"
+                            id="date"
+                            value={date}
+                            onChange={handleDateChange}
+                        />
                     </div>
-                ) : (
-                    <p>Loading...</p>
-                )}
-            </div>
+
+                    <h3>Booked Seats for {date}:</h3>
+                    {bookings.length > 0 ? (
+                        <ul>
+                            {bookings.map((booking) => (
+                                <li key={booking._id}>
+                                    Seat Number: {booking.seatNumber} - Status: {booking.isSeatAvailable ? 'Available' : 'Booked'}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p style={{ margin: 0 }}>No bookings for this date.</p> // Set margin to 0
+                    )}
+                </div>
+            ) : (
+                <p>Loading...</p>
+            )}
         </div>
-    );
+    </div>
+);
+
 };
 
 export default UserProfile;
