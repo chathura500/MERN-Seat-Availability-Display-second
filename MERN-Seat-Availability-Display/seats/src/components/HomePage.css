@@ -4,7 +4,7 @@
 
 
 .home-page {
-    background-image: url('K:\MERN-Seat-Availability-Display-second\MERN-Seat-Availability-Display\seats\public\workspace.jpg');
+    background-image: url('/public/workspace.jpg');
     background-size: cover;
     font-family: "Inter", sans-serif;
     background-position: center;

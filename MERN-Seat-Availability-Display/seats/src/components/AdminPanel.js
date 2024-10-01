@@ -3,413 +3,305 @@ import axios from 'axios';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
-    const [users, setUsers] = useState([]);
-    const [seats, setSeats] = useState([]); // State for seats
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [date, setDate] = useState(() => {
-        const today = new Date();
-        return today.toISOString().split('T')[0]; // Returns the date in 'YYYY-MM-DD' format
-    });// Set the default date or provide a way to select it
+  // State variables
+  const [users, setUsers] = useState([]);
+  const [seats, setSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const todayDate = new Date().toISOString().split('T')[0];
+  const [date, setDate] = useState(todayDate);
 
-    // State for creating a new seat
-    const [seatLetter, setSeatLetter] = useState('');
-    const [seatNumber, setSeatNumber] = useState('');
-    const [seatLetters, setSeatLetters] = useState(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']); // Example letters
-    const [seatNumbers, setSeatNumbers] = useState(Array.from({ length: 20 }, (_, i) => i + 1)); // Example numbers
-    const [bulkSeats, setBulkSeats] = useState(''); // For inputting seats in bulk
-    const [creatingSeats, setCreatingSeats] = useState(false); // State to track seat creation progress
+  const seatLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const seatNumbers = Array.from({ length: 20 }, (_, i) => i + 1);
 
-    // Sort seats by seatNumber in alphabetical and numerical order
-    const sortedSeats = seats.sort((a, b) => {
-        const [aLetter, aNumber] = a.seatNumber.split('-');
-        const [bLetter, bNumber] = b.seatNumber.split('-');
-        return aLetter.localeCompare(bLetter) || aNumber - bNumber;
-    });
+  const [creatingSeats, setCreatingSeats] = useState({});
+  const [deletingSeats, setDeletingSeats] = useState({});
 
-    useEffect(() => {
-        // Fetch users and their seat bookings
-        const fetchData = async () => {
-            try {
-                const userResponse = await axios.get(`http://localhost:4000/api/user/users-with-bookings?date=${date}`, {
-                    withCredentials: true, // Include cookies with request
-                });
-                setUsers(userResponse.data);
+  // Fetch users and seats data
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [userResponse, seatResponse] = await Promise.all([
+          axios.get(`http://localhost:4000/api/user/users-with-bookings`, {
+            params: { date },
+            withCredentials: true,
+          }),
+          axios.get(`http://localhost:4000/api/booking/seats`, {
+            params: { date },
+            withCredentials: true,
+          }),
+        ]);
 
-                const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
-                    withCredentials: true, // Include cookies with request
-                });
-                setSeats(seatResponse.data);
-
-                setLoading(false);
-            } catch (err) {
-                setError('Failed to fetch data');
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [date]); // Re-fetch data when the date changes
-
-    const handleUnbook = async (seatId) => {
-        try {
-            await axios.patch(`http://localhost:4000/api/booking/seats/unbook/${seatId}`, {}, {
-                withCredentials: true, // Include cookies with request
-            });
-            // Update the users' state to reflect the unbooked seat
-            setUsers(users.map(user => ({
-                ...user,
-                bookings: user.bookings.filter(booking => booking._id !== seatId)
-            })));
-        } catch (err) {
-            setError('Failed to unbook seat');
-        }
+        setUsers(userResponse.data);
+        setSeats(seatResponse.data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch data');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const handleCreateSeat = async () => {
-        // Ensure both seatLetter and seatNumber are selected
-        if (!seatLetter || !seatNumber) {
-            window.alert('Please select both a seat letter and number');
-            return;
+    fetchData();
+  }, [date]);
+
+  // Sort seats alphabetically and numerically
+  const sortedSeats = [...seats].sort((a, b) => {
+    const [aLetter, aNumber] = a.seatNumber.split('-');
+    const [bLetter, bNumber] = b.seatNumber.split('-');
+    return aLetter.localeCompare(bLetter) || parseInt(aNumber) - parseInt(bNumber);
+  });
+
+  // Function to unbook a seat
+  const handleUnbook = async (seatId) => {
+    try {
+      await axios.patch(
+        `http://localhost:4000/api/booking/seats/unbook/${seatId}`,
+        {},
+        {
+          withCredentials: true,
         }
+      );
+      setUsers((prevUsers) =>
+        prevUsers.map((user) => ({
+          ...user,
+          bookings: user.bookings.filter((booking) => booking._id !== seatId),
+        }))
+      );
+    } catch (err) {
+      setError('Failed to unbook seat');
+    }
+  };
 
-        try {
-            const seatId = `${seatLetter}-${seatNumber}`;
+  // Function to create seats for a row
+  const handleCreateRowSeats = async (letter) => {
+    if (creatingSeats[letter]) return;
+    setCreatingSeats((prev) => ({ ...prev, [letter]: true }));
 
-            // Check if the seat already exists for the selected date
-            if (seats.some(seat => seat.seatNumber === seatId)) {
-                window.alert(`Seat ${seatId} already exists for ${date}`);
-                return;
-            }
+    const formattedSeats = seatNumbers.map((number) => `${letter}-${number}`);
+    const seatsToCreate = formattedSeats.filter(
+      (seatId) => !seats.some((seat) => seat.seatNumber === seatId)
+    );
 
-            await axios.post('http://localhost:4000/api/booking/seats', {
-                seatNumber: seatId,
-                date
-            }, {
-                withCredentials: true, // Include cookies with request
-            });
+    if (seatsToCreate.length === 0) {
+      setError(`All seats in row ${letter} already exist`);
+      setCreatingSeats((prev) => ({ ...prev, [letter]: false }));
+      return;
+    }
 
-            // Clear the seat selection fields
-            setSeatLetter('');
-            setSeatNumber('');
+    try {
+      const seatRequests = seatsToCreate.map((seatId) =>
+        axios.post(
+          'http://localhost:4000/api/booking/seats',
+          {
+            seatNumber: seatId,
+            date,
+          },
+          {
+            withCredentials: true,
+          }
+        )
+      );
 
-            // Re-fetch seats data
-            const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
-                withCredentials: true,
-            });
-            setSeats(seatResponse.data);
+      const responses = await Promise.all(seatRequests);
+      const newSeats = responses.map((res) => res.data);
 
-        } catch (err) {
-            window.alert('Failed to create seat');
-        }
-    };
+      setSeats((prevSeats) => [...prevSeats, ...newSeats]);
+      setError(null);
+    } catch (err) {
+      setError(`Failed to create some seats for row ${letter}`);
+    } finally {
+      setCreatingSeats((prev) => ({ ...prev, [letter]: false }));
+    }
+  };
 
-    const handleDeleteSeat = async (seatId) => {
-        try {
-            await axios.delete(`http://localhost:4000/api/booking/seats/${seatId}`, {
-                withCredentials: true, // Include cookies with request
-            });
-            // Remove the deleted seat from the seats array
-            setSeats(seats.filter(seat => seat._id !== seatId));
-        } catch (err) {
-            setError('Failed to delete seat');
-        }
-    };
+  // Function to delete seats for a row
+  const handleDeleteRowSeats = async (letter) => {
+    if (deletingSeats[letter]) return;
 
-    const handleBulkCreateSeats = async () => {
-        if (!bulkSeats) {
-            setError('Please enter seat numbers to create in bulk');
-            return;
-        }
+    const confirmation = window.prompt(`Type "DELETE" to confirm deletion of row ${letter}`);
+    if (confirmation !== 'DELETE') {
+      setError('Row deletion canceled');
+      return;
+    }
 
-        const seatList = bulkSeats.split(',').map(seat => seat.trim());
+    setDeletingSeats((prev) => ({ ...prev, [letter]: true }));
 
-        const formattedSeats = seatList.map(seat => {
-            const letter = seat[0].toUpperCase();
-            const number = seat.slice(1);
+    const seatsToDelete = seats.filter((seat) => seat.seatNumber.startsWith(letter));
 
-            if (!seatLetters.includes(letter) || number === '' || isNaN(number)) {
-                setError(`Invalid seat format: ${seat}`);
-                return null;
-            }
+    if (seatsToDelete.length === 0) {
+      setError(`No seats found for row ${letter}`);
+      setDeletingSeats((prev) => ({ ...prev, [letter]: false }));
+      return;
+    }
 
-            return `${letter}-${number}`;
-        }).filter(Boolean);
+    try {
+      const deleteRequests = seatsToDelete.map((seat) =>
+        axios.delete(`http://localhost:4000/api/booking/seats/${seat._id}`, {
+          withCredentials: true,
+        })
+      );
 
-        if (formattedSeats.length === 0) {
-            setError('Please enter valid seat formats');
-            return;
-        }
+      await Promise.all(deleteRequests);
 
-        const existingSeats = formattedSeats.filter(seatId => seats.some(seat => seat.seatNumber === seatId));
+      setSeats((prevSeats) => prevSeats.filter((seat) => !seat.seatNumber.startsWith(letter)));
+      setError(null);
+    } catch (err) {
+      setError(`Failed to delete some seats in row ${letter}`);
+    } finally {
+      setDeletingSeats((prev) => ({ ...prev, [letter]: false }));
+    }
+  };
 
-        if (existingSeats.length > 0) {
-            setError(`The following seats already exist: ${existingSeats.join(', ')}`);
-            return;
-        }
+  // *** Move handleDeleteSeat function before SeatDropdown ***
+  const handleDeleteSeat = async (seatId) => {
+    try {
+      await axios.delete(`http://localhost:4000/api/booking/seats/${seatId}`, {
+        withCredentials: true,
+      });
+      setSeats((prevSeats) => prevSeats.filter((seat) => seat._id !== seatId));
+    } catch (err) {
+      setError('Failed to delete seat');
+    }
+  };
 
-        try {
-            const seatRequests = formattedSeats.map(seatId => axios.post('http://localhost:4000/api/booking/seats', {
-                seatNumber: seatId,
-                date
-            }, {
-                withCredentials: true,
-            }));
-
-            await Promise.all(seatRequests);
-
-            setBulkSeats('');
-            setError(null);
-
-            const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
-                withCredentials: true,
-            });
-            setSeats(seatResponse.data);
-
-        } catch (err) {
-            setError('Failed to create seats in bulk');
-        }
-    };
-
-    const handleCreateRowSeats = async (letter) => {
-
-        if (creatingSeats) return; // Prevent multiple simultaneous seat creation actions
-        setCreatingSeats(true); // Lock the process to prevent duplicate clicks
-
-
-        const formattedSeats = seatNumbers.map((number) => `${letter}-${number}`);
-
-        const seatsToCreate = formattedSeats.filter(seatId => !seats.some(seat => seat.seatNumber === seatId));
-
-        if (seatsToCreate.length === 0) {
-            setError(`All seats in row ${letter} already exist`);
-            setCreatingSeats(false);
-            return;
-        }
-
-        try {
-            const seatRequests = seatsToCreate.map(seatId => axios.post('http://localhost:4000/api/booking/seats', {
-                seatNumber: seatId,
-                date
-            }, {
-                withCredentials: true,
-            }));
-
-            await Promise.all(seatRequests);
-
-            const seatResponse = await axios.get(`http://localhost:4000/api/booking/seats?date=${date}`, {
-                withCredentials: true,
-            });
-            setSeats(seatResponse.data);
-            setError(null);
-
-        } catch (err) {
-            setError(`Failed to create some seats for row ${letter}`);
-        }finally {
-            setCreatingSeats(false); // Unlock the button once the operation is done
-        }
-    };
-
-    const handleDeleteRowSeats = async (letter) => {
-
-        const confirmation = window.prompt(`Type "DELETE" to confirm deletion of row ${letter}`);
-    
-        if (confirmation !== 'DELETE') {
-            setError('Row deletion canceled');
-            return;
-        }
-
-        const seatsToDelete = seats.filter(seat => seat.seatNumber.startsWith(letter));
-
-        if (seatsToDelete.length === 0) {
-            setError(`No seats found for row ${letter}`);
-            return;
-        }
-
-        try {
-            // Send a delete request for each seat in the row
-            const deleteRequests = seatsToDelete.map(seat => 
-                axios.delete(`http://localhost:4000/api/booking/seats/${seat._id}`, {
-                    withCredentials: true,
-                })
-            );
-            await Promise.all(deleteRequests);
-
-            // Update the seats state by removing deleted seats
-            setSeats(seats.filter(seat => !seat.seatNumber.startsWith(letter)));
-            setError(null);
-        } catch (err) {
-            setError(`Failed to delete some seats in row ${letter}`);
-        }
-    };
-
-    // Seat dropdown component for each letter row
-    const SeatDropdown = ({ letter, seats, handleDeleteSeat }) => {
-        const [isOpen, setIsOpen] = useState(false);
-
-        return (
-            <div className="seat-dropdown">
-                <button className='buton dropdownbuton'onClick={() => setIsOpen(!isOpen)}>
-                    {isOpen ? `Hide Seats for ${letter}` : `Show Seats for ${letter}`}
-                </button>
-                {isOpen && (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Seat Number</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {seats.map(seat => (
-                                <tr key={seat._id}>
-                                    <td>{seat.seatNumber}</td>
-                                    <td>
-                                        <button className='buton butondelseat'onClick={() => handleDeleteSeat(seat._id)}>Delete Seat</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-        );
-    };
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
+  // SeatDropdown component
+  const SeatDropdown = ({ letter, seats }) => {
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="admin-panel">
-            <h1>Admin Panel</h1>
-            <label htmlFor="date">Select Date:</label>
-            
-            <input
-                type="date"
-                id="date"
-                value={date}
-                min={new Date().toISOString().split('T')[0]} // Disable past dates
-                onChange={(e) => setDate(e.target.value)}
-            />
-            <div>
-            <h2>Create Row Seats</h2>
-            <div className='butonarrange'>
-                {seatLetters.map((letter) => (
-                    <button className='buton' key={letter}
-                     onClick={() => handleCreateRowSeats(letter)}
-                     disabled={creatingSeats} // Disable button while seats are being created
-                     >
-                      {creatingSeats ? 'Creating...' : `Create Seats ${letter}-1 to ${letter}-20`}
-                    </button>
-                ))}
-            </div>
-            </div>
-            
-            <div>
-                <h2>Delete Row Seats</h2>
-            <div className='butonarrange'>   
-                {seatLetters.map((letter) => (
-                    <button className='buton butondelete' key={letter} onClick={() => handleDeleteRowSeats(letter)}>
-                        Delete All Seats in Row {letter} 
-                    </button>
-                ))}
-            </div>
-            </div>
-
-            <div>
-                <h2>Seats List</h2>
-                <div className="seat-dropdowns-container">
-                {seatLetters.map(letter => {
-                    const seatsForRow = sortedSeats.filter(seat => seat.seatNumber.startsWith(letter));
-                    return (
-                        <SeatDropdown 
-                            key={letter} 
-                            letter={letter} 
-                            seats={seatsForRow} 
-                            handleDeleteSeat={handleDeleteSeat} 
-                        />
-                    );
-                })}
-                </div>
-            </div>
-
-
-
-            {/* <div>
-                <h2>Create Seat</h2>
-                <label>Seat Letter:</label>
-                <select value={seatLetter} onChange={(e) => setSeatLetter(e.target.value)}>
-                    <option value="">Select a letter</option>
-                    {seatLetters.map((letter) => (
-                        <option key={letter} value={letter}>{letter}</option>
-                    ))}
-                </select>
-
-                <label>Seat Number:</label>
-                <select value={seatNumber} onChange={(e) => setSeatNumber(e.target.value)}>
-                    <option value="">Select a number</option>
-                    {seatNumbers.map((number) => (
-                        <option key={number} value={number}>{number}</option>
-                    ))}
-                </select>
-
-                <button onClick={handleCreateSeat}>Create Seat</button>
-            </div> */}
-
-            {/* <div>
-                <h2>Bulk Create Seats</h2>
-                <label htmlFor="bulkSeats">Enter seats (e.g., A1, B2, C3):</label>
-                <input
-                    type="text"
-                    id="bulkSeats"
-                    value={bulkSeats}
-                    onChange={(e) => setBulkSeats(e.target.value)}
-                />
-                <button onClick={handleBulkCreateSeats}>Create Seats in Bulk</button>
-            </div> */}
-
-<div>
-    <h2>Users and Bookings</h2>
-    <table className="users-bookings-table">
-        <thead>
-            <tr>
-                <th>User Name</th>
-                <th>Email</th>
-                <th>Booked Seats</th>
+      <div className="seat-dropdown">
+        <button className="buton dropdownbuton" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? `Hide Seats for ${letter}` : `Show Seats for ${letter}`}
+        </button>
+        {isOpen && (
+          <table>
+            <thead>
+              <tr>
+                <th>Seat Number</th>
                 <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {users.map(user => (
-                <tr key={user._id}>
-                    <td data-label="User Name">{user.name}</td>
-                    <td data-label="Email">{user.email}</td>
-                    <td data-label="Booked Seats">
-                        {user.bookings.map(booking => (
-                            <span key={booking._id}>
-                                {booking.seatNumber}
-                                {user.bookings.length > 1 && ', '}
-                            </span>
-                        ))}
-                    </td>
-                    <td data-label="Actions">
-                        {user.bookings.map(booking => (
-                            <button 
-                                key={booking._id} 
-                                onClick={() => handleUnbook(booking._id)}
-                                className="buton-unbook"
-                            >
-                                Unbook {booking.seatNumber}
-                            </button>
-                        ))}
-                    </td>
+              </tr>
+            </thead>
+            <tbody>
+              {seats.map((seat) => (
+                <tr key={seat._id}>
+                  <td>{seat.seatNumber}</td>
+                  <td>
+                    <button
+                      className="buton butondelseat"
+                      onClick={() => handleDeleteSeat(seat._id)}
+                    >
+                      Delete Seat
+                    </button>
+                  </td>
                 </tr>
-            ))}
-        </tbody>
-    </table>
-</div>
-        </div>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     );
+  };
+
+  if (loading) return <p>Loading...</p>;
+
+  return (
+    <div className="admin-panel">
+      <h1>Admin Panel</h1>
+
+      {error && <p className="error-message">{error}</p>}
+
+      <label htmlFor="date">Select Date:</label>
+      <input
+        type="date"
+        id="date"
+        value={date}
+        min={todayDate}
+        onChange={(e) => setDate(e.target.value)}
+      />
+
+      <div>
+        <h2>Create Row Seats</h2>
+        <div className="butonarrange">
+          {seatLetters.map((letter) => (
+            <button
+              className="buton"
+              key={letter}
+              onClick={() => handleCreateRowSeats(letter)}
+              disabled={creatingSeats[letter]}
+            >
+              {creatingSeats[letter] ? 'Creating...' : `Create Seats ${letter}-1 to ${letter}-20`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2>Delete Row Seats</h2>
+        <div className="butonarrange">
+          {seatLetters.map((letter) => (
+            <button
+              className="buton butondelete"
+              key={letter}
+              onClick={() => handleDeleteRowSeats(letter)}
+              disabled={deletingSeats[letter]}
+            >
+              {deletingSeats[letter] ? 'Deleting...' : `Delete All Seats in Row ${letter}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2>Seats List</h2>
+        <div className="seat-dropdowns-container">
+          {seatLetters.map((letter) => {
+            const seatsForRow = sortedSeats.filter((seat) => seat.seatNumber.startsWith(letter));
+            return (
+              <SeatDropdown key={letter} letter={letter} seats={seatsForRow} />
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h2>Users and Bookings</h2>
+        <table className="users-bookings-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Email</th>
+              <th>Booked Seats</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user._id}>
+                <td data-label="User Name">{user.name}</td>
+                <td data-label="Email">{user.email}</td>
+                <td data-label="Booked Seats">
+                  {user.bookings.map((b) => b.seatNumber).join(', ')}
+                </td>
+                <td data-label="Actions">
+                  {user.bookings.map((booking) => (
+                    <button
+                      key={booking._id}
+                      onClick={() => handleUnbook(booking._id)}
+                      className="buton-unbook"
+                    >
+                      Unbook {booking.seatNumber}
+                    </button>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default AdminPanel;
