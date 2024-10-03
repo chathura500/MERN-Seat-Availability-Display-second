@@ -16,8 +16,8 @@ const seatSchema = new mongoose.Schema({
     },
     bookedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User', // Reference to the User model
-        default: null // Default to null when seat is not booked
+        ref: 'User', 
+        default: null 
     }
 });
 

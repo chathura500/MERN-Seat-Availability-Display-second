@@ -72,7 +72,8 @@ router.patch('/seats/book/:id', verifyUser, async (req, res) => { // User-only a
 });
 
 // Unbook a seat
-router.patch('/seats/unbook/:id', verifyUser, async (req, res) => { // User-only access
+router.patch('/seats/unbook/:id', verifyUser, async (req, res) => {
+    const userId = req.user._id;
     try {
         const seat = await Seat.findById(req.params.id);
         if (!seat) {
@@ -81,11 +82,13 @@ router.patch('/seats/unbook/:id', verifyUser, async (req, res) => { // User-only
         if (seat.isSeatAvailable) {
             return res.status(400).json({ error: 'Seat is already available' });
         }
-
+        if (seat.bookedBy.toString() !== userId.toString()) {
+            return res.status(403).json({ error: 'This seat is already booked by another user' });
+        }
         seat.isSeatAvailable = true;
-        seat.bookedBy = null; // Remove the booking user
+        seat.bookedBy = null;
         await seat.save();
-        res.status(200).json(seat);
+        res.status(200).json({ message: 'Seat unbooked successfully', seat });
     } catch (error) {
         res.status(500).json({ error: 'Failed to unbook seat' });
     }
