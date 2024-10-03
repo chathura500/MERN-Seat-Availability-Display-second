@@ -2,12 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const passport = require('passport');
+const authRoute = require("./routes/auth");
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const seatbooking = require('./routes/booking_routes'); // Importing your seat booking routes
 const UserModel = require('./models/User'); // Assuming you have the User model
 const userRoutes = require('./routes/user_routes');
+const { OAuth2Client } = require('google-auth-library'); // Import Google Auth Library
+require('./passport'); // Import the passport configuration
+
 const app = express();
 
 // Middleware to log request path and method
@@ -15,6 +20,8 @@ app.use((req, res, next) => {
     console.log(req.path, req.method);
     next();
 });
+
+app.use(passport.initialize()); // Initialize passport
 
 // Middleware setup
 app.use(cors({
@@ -24,6 +31,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser()); // Enable cookie parsing for handling JWT tokens
+
+app.use("/auth", authRoute); // Use auth routes
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -114,11 +123,45 @@ app.post("/register", (req, res) => {
         .catch((err) => res.status(500).json({ error: err.message }));
 });
 
+// Google Auth Route
+const client = new OAuth2Client(process.env.CLIENT_ID); // Use your Google Client ID from .env
+
+app.post('/auth/google', async (req, res) => {
+    const { id_token } = req.body;
+
+    try {
+        const ticket = await client.verifyIdToken({
+            idToken: id_token,
+            audience: process.env.CLIENT_ID, // Specify the CLIENT_ID of the app that accesses the backend
+        });
+        const payload = ticket.getPayload();
+        const userid = payload['sub'];
+        const email = payload['email'];
+
+        // Check if the user already exists in your database
+        let user = await UserModel.findOne({ email: email });
+
+        if (user) {
+            // User exists, create a JWT token
+            const token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, "jwt-secret-key", { expiresIn: "1d" });
+            res.cookie("token", token, { httpOnly: true });
+            return res.json({ data: "Login successful" });
+        } else {
+            // User does not exist, create a new user
+            user = await UserModel.create({ name: payload['name'], email: email, password: null }); // No password needed for Google login
+            const token = jwt.sign({ _id: user._id, email: user.email, role: user.role }, "jwt-secret-key", { expiresIn: "1d" });
+            res.cookie("token", token, { httpOnly: true });
+            return res.json({ data: "User registered and login successful" });
+        }
+    } catch (err) {
+        console.error("Error verifying Google ID token:", err);
+        res.status(401).json({ error: "Invalid token" });
+    }
+});
+
 // Seat Booking Routes
-//console.log(seatbooking);
 app.use('/api/booking', verifyUser, seatbooking); // Apply verifyUser middleware
-//console.log(userRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/user', userRoutes); // User routes
 
 // Protected Routes
 app.get('/home', verifyUser, (req, res) => {

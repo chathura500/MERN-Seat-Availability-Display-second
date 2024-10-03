@@ -1,6 +1,8 @@
+// src/components/Login.js
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+import GoogleLoginButton from './GoogleLoginButton'; // Import the GoogleLoginButton
 
 const Login = ({ setUserRole }) => {
     const [email, setEmail] = useState('');
@@ -23,6 +25,29 @@ const Login = ({ setUserRole }) => {
         } catch (err) {
             setError(err.response?.data?.error || 'An error occurred');
         }
+    };
+
+    const handleGoogleLoginSuccess = async (credentialResponse) => {
+        try {
+            // Send the token to your backend for verification
+            const response = await axios.post('http://localhost:4000/auth/google', {
+                id_token: credentialResponse.credential,
+            }, { withCredentials: true });
+            console.log(response);
+            if (response.data.data === "Admin Success") {
+                setUserRole('admin'); // Set the role to admin
+                navigate('/admin');
+            } else {
+                setUserRole('user'); // Set the role to user
+                navigate('/home');
+            }
+        } catch (err) {
+            setError(err.response?.data?.error || 'An error occurred during Google login');
+        }
+    };
+
+    const handleGoogleLoginFailure = (error) => {
+        setError('Google login failed: ' + error);
     };
 
     return (
@@ -60,6 +85,10 @@ const Login = ({ setUserRole }) => {
                 >
                     Signup
                 </Link>
+                <GoogleLoginButton 
+                    onSuccess={handleGoogleLoginSuccess} 
+                    onFailure={handleGoogleLoginFailure} 
+                />
             </div>
         </div>
     );
