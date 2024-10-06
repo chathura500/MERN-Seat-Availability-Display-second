@@ -4,9 +4,6 @@ const Seat = require('../models/seatSchema');
 const User = require('../models/User'); // User model
 const router = express.Router();
 
-
-
-
 // Get seats for a specific date
 router.get('/seats', async (req, res) => {
     const { date } = req.query;
@@ -91,6 +88,7 @@ router.patch('/seats/unbook/:id', verifyUser, async (req, res) => { // User-only
     }
 });
 
+// Unbook a seat by admin
 router.patch('/seats/unbook/:seatId', verifyAdmin, async (req, res) => {
     const { seatId } = req.params;
     const { userId } = req.body; // Make sure this is being sent correctly
@@ -130,6 +128,59 @@ router.delete('/seats/:id', verifyAdmin, async (req, res) => {
         res.status(200).json({ message: 'Seat deleted successfully', seat });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete seat' });
+    }
+});
+
+// Fetch all seat bookings for a specific date with user details (Booking History)
+router.get('/history', verifyAdmin, async (req, res) => { // Admin-only access
+    const { date } = req.query;
+    if (!date) {
+        return res.status(400).json({ error: 'Date is required' });
+    }
+
+    try {
+        // Find all seats booked for the given date, and populate user details
+        const bookedSeats = await Seat.find({ date: new Date(date), isSeatAvailable: false })
+            .populate('bookedBy', 'name email');
+
+        res.status(200).json(bookedSeats);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch booking history' });
+    }
+});
+
+// Mark attendance for a booked seat
+router.patch('/mark-attendance/:id', verifyAdmin, async (req, res) => {
+    try {
+        const seat = await Seat.findById(req.params.id);
+        if (!seat || seat.isSeatAvailable) {
+            return res.status(404).json({ error: 'Seat not found or not booked' });
+        }
+
+        seat.attendanceMarked = true; // Mark attendance as true
+        await seat.save();
+
+        res.status(200).json({ message: 'Attendance marked successfully', seat });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to mark attendance' });
+    }
+});
+
+// Fetch attendance records for a specific date
+router.get('/attendance', verifyAdmin, async (req, res) => {
+    const { date } = req.query;
+    if (!date) {
+        return res.status(400).json({ error: 'Date is required' });
+    }
+
+    try {
+        // Find all seats with marked attendance for the given date
+        const attendanceRecords = await Seat.find({ date: new Date(date), attendanceMarked: true })
+            .populate('bookedBy', 'name email');
+
+        res.status(200).json(attendanceRecords);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch attendance records' });
     }
 });
 

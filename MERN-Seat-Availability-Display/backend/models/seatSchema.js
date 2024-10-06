@@ -18,6 +18,10 @@ const seatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User', // Reference to the User model
         default: null // Default to null when seat is not booked
+    },
+    attendanceMarked: {
+        type: Boolean,
+        default: false // Default false, will be marked true when user marks attendance
     }
 });
 
